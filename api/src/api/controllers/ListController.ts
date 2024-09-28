@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { ListService } from "../services/ListService";
 import { CreateListDTO } from "../dtos/CreateListDTO";
 import { UpdateListDTO } from "../dtos/UpdateListDTO";
 import { ListByIdPipe } from "../pipes/ListByIdPipe";
+import { JwtGuard } from 'src/security/JwtGuard';
 
 @Controller('/lists')
 export class ListController {
@@ -11,6 +12,7 @@ export class ListController {
         private listService: ListService,
     ) {}
 
+    @UseGuards(JwtGuard)
     @Post()
     async createList (
         @Body() body: CreateListDTO,
@@ -19,6 +21,7 @@ export class ListController {
         return createdList;
     }
 
+    @UseGuards(JwtGuard)
     @Patch('/:id')
     async updateListById (
         @Param('id', ListByIdPipe) id: string,
@@ -28,6 +31,7 @@ export class ListController {
         return updatedList;
     }
 
+    @UseGuards(JwtGuard)
     @Delete('/:id')
     async deleteListById (
         @Param('id', ListByIdPipe) id: string,
@@ -36,6 +40,7 @@ export class ListController {
         return deletedList;
     }
 
+    @UseGuards(JwtGuard)
     @Get('/:id')
     async getListById (
         @Param('id', ListByIdPipe) id: string,
