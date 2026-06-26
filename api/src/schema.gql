@@ -1,0 +1,167 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type BoardUser {
+  id: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  userId: String!
+  boardId: String!
+  userRole: BoardRole!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+enum BoardRole {
+  ADMIN
+  MODERATOR
+  CONTRIBUTOR
+}
+
+type Task {
+  id: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  name: String!
+  description: String
+  deadline: DateTime
+  listId: String!
+  priority: Priority!
+  assignee: [BoardUser!]
+  assigneeId: String
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  EXTREME
+}
+
+type List {
+  id: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  name: String!
+  boardId: String!
+  tasks: [Task!]!
+}
+
+type LoginPayload {
+  accessToken: String!
+}
+
+type User {
+  id: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  email: String!
+  username: String
+  firstName: String!
+  lastName: String!
+  isVerified: Boolean!
+  boardUsers: [BoardUser!]!
+}
+
+type Board {
+  id: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  name: String!
+  lists: [List!]!
+  boardUsers: [BoardUser!]!
+}
+
+type Query {
+  task(taskId: String!): Task!
+  tasks: [Task!]!
+  myBoardUsers: [BoardUser!]!
+  list(listId: String!): List!
+  lists: [List!]!
+  me: User!
+  board(boardId: String!): Board!
+}
+
+type Mutation {
+  createTask(data: CreateTaskDto!): Task!
+  deleteTaskById(taskId: String!): Task!
+  updateTaskById(taskId: String!, data: UpdateTaskDto!): Task!
+  createBoardUser(data: CreateBoardUserDto!): BoardUser!
+  updateBoardUser(boardUserId: String!, data: UpdateBoardUserDto!): BoardUser!
+  deleteBoardUser(boardUserId: String!): BoardUser!
+  createList(data: CreateListDto!): List!
+  updateListById(listId: String!, data: UpdateListDto!): List!
+  deleteListById(listId: String!): List!
+  login(data: LoginDto!): LoginPayload!
+  register(data: CreateUserDto!): Boolean
+  verifyEmail(userId: String!): User!
+  createBoard(data: CreateBoardDto!): Board!
+  updateBoardById(data: UpdateBoardDto!, boardId: String!): Board!
+  deleteBoardById(boardId: String!): Board!
+}
+
+input CreateTaskDto {
+  name: String!
+  description: String
+  deadline: DateTime
+  listId: String!
+  priority: Priority!
+  assigneeId: String
+}
+
+input UpdateTaskDto {
+  name: String
+  description: String
+  deadline: DateTime
+  listId: String
+  priority: Priority
+  assigneeId: String
+}
+
+input CreateBoardUserDto {
+  userId: String!
+  boardId: String!
+  userRole: BoardRole!
+}
+
+input UpdateBoardUserDto {
+  userRole: BoardRole
+}
+
+input CreateListDto {
+  name: String!
+  boardId: String!
+}
+
+input UpdateListDto {
+  name: String
+}
+
+input LoginDto {
+  email: String!
+  password: String!
+}
+
+input CreateUserDto {
+  firstName: String!
+  lastName: String!
+  email: String!
+  password: String!
+}
+
+input CreateBoardDto {
+  name: String!
+}
+
+input UpdateBoardDto {
+  name: String
+}
+
+type Subscription {
+  taskCreated: Task!
+  taskUpdated: Task!
+}
