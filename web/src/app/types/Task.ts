@@ -7,14 +7,11 @@ export interface Task {
     deadline: Date,
     listId: string,
     priority: Priority,
+    assigneeId?: string,
     createdAt: Date,
+    updatedAt: Date,
 }
 
-export interface CreateTask {
-    name: string,
-    description: string,
-    deadline: Date,
-    listId: string,
-    priority: Priority,
-    createdAt: Date,
-}
+export interface CreateTaskData extends Omit<Task, 'id' | 'createdAt' | 'updatedAt'> {}
+
+export interface UpdateTaskData extends Partial<CreateTaskData> {}
