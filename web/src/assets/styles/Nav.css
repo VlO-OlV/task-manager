@@ -21,6 +21,23 @@
   gap: 20px;
 }
 
+.nav .pages-block {
+  position: relative;
+  display: flex;
+  gap: 30px;
+}
+
+.nav .pages-block span {
+  font-weight: 500;
+  color: #5a647d;
+  opacity: 0.5;
+  transition: 0.4s;
+}
+
+.nav .pages-block span:hover {
+  opacity: 1;
+}
+
 .nav .button {
   display: flex;
   align-items: center;

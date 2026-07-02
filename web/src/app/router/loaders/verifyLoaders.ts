@@ -1,9 +1,9 @@
-import { Params } from 'react-router-dom'
-import { authApi } from '../../store/api/endpoints/authApi'
-import { store } from '../../store/store'
+import type { Params } from "react-router-dom";
+import { client } from "../../graphql/client";
+import { VERIFY_EMAIL } from "../../graphql/mutations";
 
 export const verifyEmailLoader = async ({ params }: { params: Params<string> }) => {
-  const verifyEmail = await store.dispatch(authApi.endpoints.verifyEmail.initiate(params.userId as string));
+  const verifyEmail = await client.query({ query: VERIFY_EMAIL, variables: { userId: params.userId as string } });
   if (verifyEmail.error) {
     return null;
   }

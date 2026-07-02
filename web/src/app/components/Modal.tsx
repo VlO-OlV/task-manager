@@ -1,200 +1,240 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import '../../assets/styles/Modal.css';
-import { List } from '../types/List';
-import { CreateTask, Task } from '../types/Task';
+import { type List } from '../types/List';
+import { type Task } from '../types/Task';
 import { Priority } from '../enums/PriorityEnum';
-import { useGetListByIdQuery } from '../store/api/endpoints/listsApi';
-import { useCreateTaskMutation, useUpdateTaskByIdMutation } from '../store/api/endpoints/tasksApi';
-import { useToastContext } from '../hooks/contexts/ToastContext';
-import getErrorMsg from '../utils/getErrorMsg';
 import getDateString from '../utils/getDateString';
-import { formatPriority } from '../utils/formatPriority';
+import { formatEnum } from '../utils/formatEnum';
+import { useMutation, useQuery } from '@apollo/client/react';
+import { GET_LIST_BY_ID } from '../graphql/queries/list';
+import { CREATE_TASK, UPDATE_TASK_BY_ID } from '../graphql/mutations/task';
+import { useForm } from 'react-hook-form';
 
 interface ModalProps {
-    listId: string,
-    taskData: Task,
-    mode: number,
-    refetchTasks: () => void,
-    closeModal: () => void,
-    changeMode: (mode: number) => void,
+  listId: string,
+  taskData: Task,
+  mode: number,
+  refetchTasks: () => void,
+  closeModal: () => void,
+  changeMode: (mode: number) => void,
 }
 
+interface TaskFormValues {
+  name: string;
+  deadline: string;
+  priority: Priority;
+  description: string;
+}
+
+const toDateTimeLocalValue = (date: Date | string | undefined | null): string => {
+  if (!date) {
+    return '';
+  }
+
+  const parsedDate = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(parsedDate.getTime())) {
+    return '';
+  }
+
+  const adjustedDate = new Date(parsedDate.getTime() - parsedDate.getTimezoneOffset() * 60000);
+  return adjustedDate.toISOString().slice(0, 16);
+};
+
 function Modal({
-    listId,
-    taskData,
-    mode,
-    refetchTasks,
-    closeModal,
-    changeMode
+  listId,
+  taskData,
+  mode,
+  refetchTasks,
+  closeModal,
+  changeMode,
 }: ModalProps) {
-    
-    const {
-        data,
-        isFetching: isListFetching,
-        error: fetchListError,
-    } = useGetListByIdQuery(listId);
 
-    const [updateTask] = useUpdateTaskByIdMutation();
-    const [createTask] = useCreateTaskMutation();
+  const {
+    data,
+    loading: isListFetching,
+    error: fetchListError,
+  } = useQuery(GET_LIST_BY_ID, {
+    variables: { id: listId },
+  });
 
-    const { showMessage } = useToastContext();
+  const [updateTask] = useMutation(UPDATE_TASK_BY_ID);
+  const [createTask] = useMutation(CREATE_TASK);
 
-    const currentList: List = data as List;
+  const currentList: List | undefined = data?.list;
 
-    if (fetchListError) {
-        showMessage(getErrorMsg(fetchListError));
+  const [isVisibleDropdown, setIsVisibleDropdown] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+  } = useForm<TaskFormValues>({
+    defaultValues: {
+      name: '',
+      deadline: '',
+      priority: Priority.LOW,
+      description: '',
+    },
+  });
+
+  useEffect(() => {
+    reset({
+      name: mode === 2 ? taskData.name : '',
+      deadline: mode === 2 ? toDateTimeLocalValue(taskData.deadline) : '',
+      priority: mode === 2 ? taskData.priority : Priority.LOW,
+      description: mode === 2 ? taskData.description ?? '' : '',
+    });
+  }, [mode, taskData, reset]);
+
+  const selectedPriority = watch('priority');
+
+  const changePriority = (priority: Priority) => {
+    setValue('priority', priority, { shouldDirty: true });
+    setIsVisibleDropdown(false);
+  };
+
+  const onSubmit = async (values: TaskFormValues) => {
+    const payload = {
+      name: values.name,
+      description: values.description,
+      deadline: values.deadline ? new Date(values.deadline) : null,
+      listId,
+      priority: values.priority,
+    };
+
+    if (mode === 2) {
+      await updateTask({
+        variables: {
+          id: taskData.id,
+          data: payload,
+        },
+      })
+        .then(() => {
+          refetchTasks();
+          closeModal();
+        })
+        .catch(() => {
+          // showMessage(getErrorMsg(error as never));
+        });
+      return;
     }
 
-    const [isVisibleDropdown, setIsVisibleDropdown] = useState(false);
+    await createTask({
+      variables: {
+        data: payload,
+      },
+    })
+      .then(() => {
+        refetchTasks();
+        closeModal();
+      })
+      .catch(() => {
+        // showMessage(getErrorMsg(error as never));
+      });
+  };
 
-    const [taskTitle, setTaskTitle] = useState(mode !== 3 ? taskData.name : null);
-    const [taskDeadline, setTaskDeadline] = useState(mode !== 3 ? taskData.deadline : null);
-    const [taskPriority, setTaskPriority] = useState(mode !== 3 ? taskData.priority : Priority.LOW);
-    const [taskDecription, setTaskDescription] = useState(mode !== 3 ? taskData.description : null);
+  if (fetchListError) {
+    // showMessage(getErrorMsg(fetchListError as never));
+    return (<></>);
+  }
 
-    const changePriority = (event: any) => {
-        setTaskPriority(event.target.value);
-        setIsVisibleDropdown(false);
-    }
-
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        if (mode === 2) {
-            const updatedTask: Task = {
-                id: taskData.id,
-                name: taskTitle as any,
-                description: taskDecription as any,
-                deadline: taskDeadline as any,
-                listId: listId,
-                priority: taskPriority as any,
-                createdAt: new Date(),
-            };
-            console.log(taskTitle as any);
-            await updateTask({...updatedTask})
-                    .unwrap()
-                    .then(() => {
-                        refetchTasks();
-                        closeModal();
-                    })
-                    .catch((error) => {
-                        showMessage(getErrorMsg(error));
-                    });
-        } else {
-            const newTask: CreateTask = {
-                name: taskTitle as any,
-                description: taskDecription as any,
-                deadline: taskDeadline as any,
-                listId: listId,
-                priority: taskPriority as any,
-                createdAt: new Date(),
-            };
-            await createTask({...newTask})
-                    .unwrap()
-                    .then(() => {
-                        refetchTasks();
-                        closeModal();
-                    })
-                    .catch((error) => {
-                        showMessage(getErrorMsg(error));
-                    });
-        }
-    }
-
-    return (
-        <div className="modal-wrapper">
-            <div className="modal">
-                <div className="modal-header">
-                    <button className="modal-close" onClick={closeModal}></button>
-                </div>
-                {
-                    mode === 1 ? 
-                        <div className="modal-body">
-                            <div className="modal-body-header">
-                                <h2 className="body-header_title">{taskData.name}</h2>
-                                <button className="body-header_button button-edit" onClick={() => {changeMode(2);}}>Edit task</button>
-                            </div>
-                            <div className="modal-body-info">
-                                <div className="info_block">
-                                    <span className="status_label">Status</span>
-                                    <p>{!isListFetching && currentList.name}</p>
-                                </div>
-                                <div className="info_block">
-                                    <span className="deadline_label">Due date</span>
-                                    <p>{taskData.deadline ? getDateString(new Date(taskData.deadline)) : 'No deadline'}</p>
-                                </div>
-                                <div className="info_block">
-                                    <span className="priority_label">Priority</span>
-                                    <p>{formatPriority(taskData.priority)}</p>
-                                </div>
-                            </div>
-                            <div className="modal-body-description">
-                                <h3>Description</h3>
-                                <p>{taskData.description}</p>
-                            </div>
-                        </div>
-                    : 
-                        <form action='' className="modal-body" onSubmit={(e) => {handleSubmit(e);}}>
-                            <div className="modal-body-header">
-                                <input type="text" name="title" placeholder="Task title" defaultValue={mode === 2 ? taskData.name : ""} className="title_input" onChange={(e) => {setTaskTitle(e.target.value);}} />
-                                {
-                                    mode === 2 ?
-                                        <button className="body-header_button button-cancel" onClick={() => {changeMode(1);}}>Cancel</button>
-                                    :
-                                        null
-                                }
-                            </div>
-                            <div className="modal-body-info">
-                                <div className="info_block">
-                                    <label className="status_label">Status</label>
-                                    <p>{!isListFetching && currentList.name}</p>
-                                </div>
-                                <div className="info_block">
-                                    <label htmlFor="deadline" className="deadline_label">Due date</label>
-                                    <input type="datetime-local" name="deadline" className="deadline_input" defaultValue={mode === 2 ? taskData.deadline ? getDateString(new Date(taskData.deadline)) : '' : ''} onChange={(e) => {setTaskDeadline(new Date(e.target.value));}}/>
-                                </div>
-                                <div className="info_block">
-                                    <label htmlFor="priority" className="priority_label">Priority</label>
-                                    <div className="priority_select">
-                                        <select value={taskPriority} name="priority">
-                                            <option value={Priority.LOW}>Low</option>
-                                            <option value={Priority.MEDIUM}>Medium</option>
-                                            <option value={Priority.HIGH}>High</option>
-                                            <option value={Priority.EXTREME}>Extreme</option>
-                                        </select>
-                                        <div className="select_input">
-                                            <button type="button" className={isVisibleDropdown ? "select_input_button select_input_button-active" : "select_input_button"} onClick={() => {setIsVisibleDropdown(!isVisibleDropdown)}}>{formatPriority(taskPriority)}</button>
-                                            {
-                                                isVisibleDropdown ?
-                                                    <div className="select_input_options">
-                                                        <button type="button" value={Priority.LOW} onClick={(e) => {changePriority(e);}}>Low</button>
-                                                        <button type="button" value={Priority.MEDIUM} onClick={(e) => {changePriority(e);}}>Medium</button>
-                                                        <button type="button" value={Priority.HIGH} onClick={(e) => {changePriority(e);}}>High</button>
-                                                        <button type="button" className="option_last" value={Priority.EXTREME} onClick={(e) => {changePriority(e);}}>Extreme</button>
-                                                    </div>
-                                                :
-                                                    null
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="modal-body-description">
-                                <h3>Description</h3>
-                                <textarea placeholder="Description to the task" name="description" defaultValue={mode === 2 ? taskData.description : ""} onChange={(e) => {setTaskDescription(e.target.value);}}></textarea>
-                            </div>
-                            <div className="modal-body-submit">
-                                {
-                                    mode === 2 ?
-                                        <input className="form_button-submit" type="submit" value="Update" />
-                                    :
-                                        <input className="form_button-submit" type="submit" value="Create" />
-                                }
-                            </div>
-                        </form>
-                }
-            </div>
+  return (
+    <div className="modal-wrapper">
+      <div className="modal">
+        <div className="modal-header">
+          <button className="modal-close" onClick={closeModal}></button>
         </div>
-    );
+        {
+          mode === 1 ?
+            <div className="modal-body">
+              <div className="modal-body-header">
+                <h2 className="body-header_title">{taskData.name}</h2>
+                <button className="body-header_button button-edit" onClick={() => { changeMode(2); }}>Edit task</button>
+              </div>
+              <div className="modal-body-info">
+                <div className="info_block">
+                  <span className="status_label">Status</span>
+                  <p>{!isListFetching && currentList?.name}</p>
+                </div>
+                <div className="info_block">
+                  <span className="deadline_label">Due date</span>
+                  <p>{taskData.deadline ? getDateString(new Date(taskData.deadline)) : 'No deadline'}</p>
+                </div>
+                <div className="info_block">
+                  <span className="priority_label">Priority</span>
+                  <p>{formatEnum(taskData.priority)}</p>
+                </div>
+              </div>
+              <div className="modal-body-description">
+                <h3>Description</h3>
+                <p>{taskData.description}</p>
+              </div>
+            </div>
+            :
+            <form action='' className="modal-body" onSubmit={handleSubmit(onSubmit)}>
+              <div className="modal-body-header">
+                <input type="text" placeholder="Task title" className="title_input" {...register('name', { required: true })} />
+                {
+                  mode === 2 ?
+                    <button type="button" className="body-header_button button-cancel" onClick={() => { changeMode(1); }}>Cancel</button>
+                    :
+                    null
+                }
+              </div>
+              <div className="modal-body-info">
+                <div className="info_block">
+                  <label className="status_label">Status</label>
+                  <p>{!isListFetching && currentList?.name}</p>
+                </div>
+                <div className="info_block">
+                  <label htmlFor="deadline" className="deadline_label">Due date</label>
+                  <input type="datetime-local" className="deadline_input" {...register('deadline')} />
+                </div>
+                <div className="info_block">
+                  <label htmlFor="priority" className="priority_label">Priority</label>
+                  <div className="priority_select">
+                    <select value={selectedPriority} {...register('priority')}>
+                      <option value={Priority.LOW}>Low</option>
+                      <option value={Priority.MEDIUM}>Medium</option>
+                      <option value={Priority.HIGH}>High</option>
+                      <option value={Priority.EXTREME}>Extreme</option>
+                    </select>
+                    <div className="select_input">
+                      <button type="button" className={isVisibleDropdown ? 'select_input_button select_input_button-active' : 'select_input_button'} onClick={() => { setIsVisibleDropdown(!isVisibleDropdown); }}>{formatEnum(selectedPriority)}</button>
+                      {
+                        isVisibleDropdown ?
+                          <div className="select_input_options">
+                            <button type="button" onClick={() => { changePriority(Priority.LOW); }}>Low</button>
+                            <button type="button" onClick={() => { changePriority(Priority.MEDIUM); }}>Medium</button>
+                            <button type="button" onClick={() => { changePriority(Priority.HIGH); }}>High</button>
+                            <button type="button" className="option_last" onClick={() => { changePriority(Priority.EXTREME); }}>Extreme</button>
+                          </div>
+                          :
+                          null
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-body-description">
+                <h3>Description</h3>
+                <textarea placeholder="Description to the task" {...register('description')}></textarea>
+              </div>
+              <div className="modal-body-submit">
+                {
+                  mode === 2 ?
+                    <input className="form_button-submit" type="submit" value="Update" />
+                    :
+                    <input className="form_button-submit" type="submit" value="Create" />
+                }
+              </div>
+            </form>
+        }
+      </div>
+    </div>
+  );
 }
 
 export default Modal;

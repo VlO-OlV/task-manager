@@ -1,8 +1,8 @@
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import Nav from '../components/Nav';
 import { useCookies } from 'react-cookie';
-import { User } from '../types/User';
 import ProfileBlock from '../components/ProfileBlock';
+import type { User } from '../types/User';
 
 function ProfilePage () {
 
@@ -14,6 +14,7 @@ function ProfilePage () {
 
   const logout = () => {
     removeAccessCookie('accessToken');
+    console.log('hello');
     navigate('/login');
   }
 

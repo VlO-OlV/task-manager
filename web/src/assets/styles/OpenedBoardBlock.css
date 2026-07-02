@@ -1,0 +1,40 @@
+.lists-block {
+  display: flex;
+  overflow-x: scroll;
+  scrollbar-width: none;
+}
+
+.lists-block .button-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 180px;
+  min-width: 180px;
+  height: 36px;
+  padding: 0px;
+  margin-top: 50px;
+  gap: 8px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: Inter;
+  font-weight: 500;
+  border: none;
+  background: #5a647d;
+  color: white;
+  transition: 0.4s;
+}
+
+.lists-block .button-list:hover {
+  border-radius: 8px;
+}
+
+.lists-block .button-list::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  mask-size: 22px 22px;
+  mask-image: url('../images/add.svg');
+  mask-position: center;
+  mask-repeat: no-repeat;
+  background-color: white;
+}

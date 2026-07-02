@@ -1,14 +1,18 @@
 import { Cookies } from 'react-cookie';
-import { authApi } from '../store/api/endpoints/authApi';
-import { store } from '../store/store';
+import { client } from '../graphql/client';
+import { GET_ME } from '../graphql/queries';
 
 const checkAuthUser = async () => {
-  const getMe = await store.dispatch(authApi.endpoints.getMe.initiate());
-  const accessCookie = new Cookies().get('accessToken');
-  if (getMe.error || !accessCookie) {
+  try {
+    const getMe = await client.query({ query: GET_ME, fetchPolicy: 'network-only' });
+    const accessCookie = new Cookies().get('accessToken');
+    if (getMe.error || !accessCookie) {
+      return false;
+    }
+    return getMe.data?.me;
+  } catch(err) {
     return false;
   }
-  return getMe.data;
 }
 
 export default checkAuthUser;

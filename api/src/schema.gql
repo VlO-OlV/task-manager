@@ -78,10 +78,8 @@ type Board {
 
 type Query {
   task(taskId: String!): Task!
-  tasks: [Task!]!
   myBoardUsers: [BoardUser!]!
   list(listId: String!): List!
-  lists: [List!]!
   me: User!
   board(boardId: String!): Board!
 }
