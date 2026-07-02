@@ -1,18 +1,17 @@
 import { RouterProvider } from 'react-router-dom';
 import { router } from './router/router';
 import { ApolloProvider } from '@apollo/client/react';
-import { ToastProvider } from './hooks/contexts/ToastContext';
 import { CookiesProvider } from 'react-cookie';
 import { client } from './graphql/client';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
     <ApolloProvider client={client}>
-      <ToastProvider>
         <CookiesProvider>
           <RouterProvider router={router} />
+          <Toaster />
         </CookiesProvider>
-      </ToastProvider>
     </ApolloProvider>
   );
 }

@@ -34,16 +34,6 @@ export class TaskResolver {
     return task;
   }
 
-  @Query(() => [Task], {
-    name: 'tasks'
-  })
-  @UseGuards(JwtGuard, BoardRolesGuard)
-  // @Get()
-  async getAllTasks () {
-    const tasks = await this.taskService.getAll();
-    return tasks;
-  }
-
   @ResolveField('assignee', () => [BoardUser], { nullable: true })
   async getAssignee(
     @Parent() task: Task,
@@ -75,7 +65,7 @@ export class TaskResolver {
   }
   
   @Mutation(() => Task)
-  @BoardRoles(BoardRole.ADMIN, BoardRole.CONTRIBUTOR)
+  @BoardRoles(BoardRole.ADMIN, BoardRole.MODERATOR)
   @UseGuards(JwtGuard, BoardRolesGuard)
   // @Patch('/:taskId')
   async updateTaskById (

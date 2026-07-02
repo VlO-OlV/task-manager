@@ -29,16 +29,6 @@ export class ListResolver {
     return list;
   }
 
-  @Query(() => [List], {
-    name: 'lists',
-  })
-  @UseGuards(JwtGuard)
-  // @Get()
-  async getAllLists () {
-    const lists = await this.listService.getAll();
-    return lists;
-  }
-
   @ResolveField('tasks', () => [Task])
   async getTasks(
     @Parent() list: List,

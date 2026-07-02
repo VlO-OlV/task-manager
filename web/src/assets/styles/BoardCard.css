@@ -1,0 +1,137 @@
+.board-card {
+  position: relative;
+  width: 250px;
+  padding: 20px;
+  border-radius: 10px;
+  border: 2px solid #bcc1ca;
+  color: #000000;
+  cursor: pointer;
+  transition: 0.4s;
+}
+
+.board-card:hover {
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.3);
+}
+
+.board-card-header {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.board-card-header h3 {
+  font-size: 24px;
+}
+
+.board-card-header div {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.board-header_form input[type="text"] {
+  position: relative;
+  height: 85%;
+  width: 150px;
+  font-family: Inter;
+  font-size: 18px;
+  font-weight: 600;
+  outline: none;
+  border: none;
+}
+
+.board-header_form .form_button {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  padding: 0px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border: 2px solid;
+  border-radius: 6px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: 0.6s;
+}
+
+.board-header_form .form_button::before {
+  content: "";
+  width: 30px;
+  height: 30px;
+  mask-size: 26px 26px;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  transition: 0.6s;
+}
+
+.board-header_form .button-cancel {
+  border-color: #e73f2e;
+}
+
+.board-header_form .button-cancel::before {
+  mask-image: url('../images/close.svg');
+  background-color: #e73f2e;
+}
+
+.board-header_form .button-cancel:hover {
+  background-color: #e73f2e;
+}
+
+.board-header_form .button-cancel:hover::before {
+  mask-image: url('../images/close.svg');
+  background-color: white;
+}
+
+.board-header_form .button-submit {
+  border-color: #00a50e;
+}
+
+.board-header_form .button-submit::before {
+  mask-image: url('../images/confirm.svg');
+  background-color: #00a50e;
+}
+
+.board-header_form .button-submit:hover {
+  background-color: #00a50e;
+}
+
+.board-header_form .button-submit:hover::before {
+  mask-image: url('../images/confirm.svg');
+  background-color: white;
+}
+
+.board-menu {
+  height: 40px;
+  width: 30px;
+  border: none;
+  background-color: transparent;
+  mask-size: 26px 26px;
+  mask-image: url('../images/options.svg');
+  mask-position: center;
+  mask-repeat: no-repeat;
+  background-color: black;
+}
+
+.board-card-details {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.board-card-details .board-user-role {
+  font-weight: 500;
+}
+
+.board-card-details .last-updated {
+  font-size: 14px;
+  font-weight: 500;
+  color: #636c84;
+}

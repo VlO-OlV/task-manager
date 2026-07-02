@@ -1,7 +1,6 @@
 import AuthForm from '../components/AuthForm';
 import Nav from '../components/Nav';
 import { Link } from 'react-router-dom';
-import Toast from '../components/Toast';
 
 function LoginPage () {
   return (
@@ -12,7 +11,6 @@ function LoginPage () {
       <main>
         <AuthForm isLogin={true} />
       </main>
-      <Toast />
     </>
   );
 }

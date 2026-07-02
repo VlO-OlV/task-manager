@@ -9,6 +9,8 @@ import { userAuthenticatedLoader, userNotAuthenticatedLoader } from './loaders/a
 import CheckEmailBlock from '../components/CheckEmailBlock';
 import SuccessBlock from '../components/SuccessBlock';
 import { verifyEmailLoader } from './loaders/verifyLoaders';
+import BoardsBlock from '../components/BoardsBlock';
+import OpenedBoardBlock from '../components/OpenedBoardBlock';
 
 export const router = createBrowserRouter([
   {
@@ -47,8 +49,18 @@ export const router = createBrowserRouter([
     ],
   },
   { 
-    path: '/boards/:boardId',
+    path: '/boards',
     element: <BoardPage />,
     loader: userAuthenticatedLoader,
+    children: [
+      {
+        path: ':boardId',
+        element: <OpenedBoardBlock/>,
+      },
+      {
+        index: true,
+        element: <BoardsBlock/>,
+      }
+    ],
   },
 ]);

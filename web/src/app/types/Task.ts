@@ -3,8 +3,8 @@ import { Priority } from "../enums/PriorityEnum";
 export interface Task {
     id: string,
     name: string,
-    description: string,
-    deadline: Date,
+    description?: string | null,
+    deadline?: Date | null,
     listId: string,
     priority: Priority,
     assigneeId?: string,

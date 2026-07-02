@@ -1,0 +1,10 @@
+.boards-block {
+  position: relative;
+  width: 100%-60px;
+  padding: 30px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-family: Inter;
+}

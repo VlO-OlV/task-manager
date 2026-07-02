@@ -1,109 +1,118 @@
 import { useState } from 'react';
 import '../../assets/styles/Task.css';
 import Menu from './Menu';
-import { List } from '../types/List';
-import { Task } from '../types/Task';
-import { useDeleteTaskByIdMutation, useUpdateTaskByIdMutation } from '../store/api/endpoints/tasksApi';
-import { useGetAllListsQuery } from '../store/api/endpoints/listsApi';
-import { useToastContext } from '../hooks/contexts/ToastContext';
-import getErrorMsg from '../utils/getErrorMsg';
+import { type List } from '../types/List';
+import { type Task } from '../types/Task';
 import getDateString from '../utils/getDateString';
-import { formatPriority } from '../utils/formatPriority';
+import { formatEnum } from '../utils/formatEnum';
+import { useParams } from 'react-router-dom';
+import { MenuModes } from '../enums/MenuModesEnum';
+import { useMutation, useQuery } from '@apollo/client/react';
+import { GET_BOARD_LISTS } from '../graphql/queries/board';
+import { DELETE_TASK_BY_ID, UPDATE_TASK_BY_ID } from '../graphql/mutations/task';
 
 interface TaskBlockProps {
-    refetchTasks: () => void,
-    taskData: Task,
-    openModal: (mode: number) => void,
+  refetchTasks: () => void,
+  taskData: Task,
+  openModal: (mode: number) => void,
 }
 
 function TaskBlock({
-    refetchTasks,
-    taskData,
-    openModal,
+  refetchTasks,
+  taskData,
+  openModal,
 }: TaskBlockProps) {
 
-    const {
-        data,
-        error: fetchListsError,
-    } = useGetAllListsQuery();
+  const { boardId } = useParams();
 
-    const [deleteTask] = useDeleteTaskByIdMutation();
-    const [updateTask] = useUpdateTaskByIdMutation();
+  const {
+    data,
+    error: fetchListsError,
+  } = useQuery(GET_BOARD_LISTS, {
+    variables: { id: boardId as string },
+    skip: !boardId,
+  });
 
-    const { showMessage } = useToastContext();
+  const [deleteTask] = useMutation(DELETE_TASK_BY_ID);
+  const [updateTask] = useMutation(UPDATE_TASK_BY_ID);
 
-    const lists: List[] = data as List[];
+  const lists: List[] = data?.board.lists ?? [];
 
-    if (fetchListsError) {
-        showMessage(getErrorMsg(fetchListsError));
-    }
+  const [isVisibleDropdown, setIsVisibleDropdown] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
 
-    const [isVisibleDropdown, setIsVisibleDropdown] = useState(false);
-    const [isVisibleOptions, setIsVisibleOptions] = useState(false);
+  const removeTask = async (taskId: string) => {
+    await deleteTask({ variables: { id: taskId } })
+      .then(() => {
+        refetchTasks();
+      })
+      .catch(() => {
+        // showMessage(getErrorMsg(error as never));
+      });
+  };
 
-    const closeMenu = () => {
-        setIsVisibleOptions(false);
-    }
+  const handleDeleteTask = () => {
+    removeTask(taskData.id);
+    setIsMenuVisible(false);
+  }
 
-    const removeTask = async (taskId: string) => {
-        await deleteTask({id: taskId})
-                .unwrap()
-                .then(() => {
-                    refetchTasks();
-                })
-                .catch((error) => {
-                    showMessage(getErrorMsg(error));
-                });
-    }
+  const handleEditTask = () => {
+    openModal(2);
+    setIsMenuVisible(false);
+  }
 
-    const moveTask = async (targetListId: string) => {
-        const updatedTask: Task = {
-            ...taskData,
-            listId: targetListId,
-        };
-        await updateTask(updatedTask)
-                .unwrap()
-                .then(() => {
-                    refetchTasks();
-                })
-                .catch((error) => {
-                    showMessage(getErrorMsg(error));
-                });
-    }
+  const moveTask = async (targetListId: string) => {
+    await updateTask({
+      variables: {
+        id: taskData.id,
+        data: {
+          name: taskData.name,
+          description: taskData.description,
+          deadline: taskData.deadline,
+          listId: targetListId,
+          priority: taskData.priority,
+          assigneeId: taskData.assigneeId,
+        },
+      },
+    })
+      .then(() => {
+        refetchTasks();
+      })
+      .catch(() => {
+        // showMessage(getErrorMsg(error as never));
+      });
+  };
 
-    const renderListOptions = (lists: List[]): React.ReactElement[] => {
-        let listOptions = [];
-        for (let i = 0; i < lists.length; i++) {
-            if (lists[i].id !== taskData.listId) {
-                if (i < lists.length-1) {
-                    listOptions.push(<button className="task-dropdown-content-button" onClick={() => {moveTask(lists[i].id);}}>{lists[i].name}</button>)
-                } else {
-                    listOptions.push(<button className="task-dropdown-content-button lastList" onClick={() => {moveTask(lists[i].id);}}>{lists[i].name}</button>)
-                }
-            }
-        }
-        return listOptions;
-    }
+  const renderListOptions = (lists: List[]): React.ReactElement[] => {
+    const filteredLists = lists.filter((list) => list.id !== taskData.listId);
+    const listOptions = filteredLists.map((list, index) => (<button className={`task-dropdown-content-button ${index === filteredLists.length-1 ? 'lastList' : ''}`} onClick={() => {moveTask(list.id);}}>{list.name}</button>));
+    return listOptions;
+  }
 
-    return (
-        <div className="task" onClick={() => {openModal(1);}}>
-            <div className="task-header">
-                <h3 className="task-title">{taskData.name}</h3>
-                <button className="task-menu" onClick={(e) => {e.stopPropagation(); setIsVisibleOptions(!isVisibleOptions)}}></button>
-            </div>
-            { isVisibleOptions ? <Menu isList={false} closeMenu={closeMenu} openModal={openModal} handleDelete={() => {removeTask(taskData.id);}}/> : null }
-            <p className="task-description">{taskData.description}</p>
-            <span className="task-deadline">{taskData.deadline ? getDateString(new Date(taskData.deadline)) : 'No deadline'}</span>
-            <span className="task-priority">{formatPriority(taskData.priority)}</span>
-            <div className="task-dropdown" onClick={(e) => {e.stopPropagation();}}>
-                <button className={ isVisibleDropdown ? "task-dropdown-button task-dropdown-button_active" : "task-dropdown-button"} onClick={ () => {setIsVisibleDropdown(!isVisibleDropdown)} }>Move to:</button>
-                { isVisibleDropdown ? 
-                <div className="task-dropdown-content">
-                    {renderListOptions(lists)}
-                </div> : null }
-            </div>
-        </div>
-    );
+  if (fetchListsError) {
+    // showMessage(getErrorMsg(fetchListsError as never));
+    return (<></>);
+  }
+
+  return (
+    <div className="task" onClick={() => {openModal(1);}}>
+      { isMenuVisible ? <Menu menuMode={MenuModes.TASK} handleDelete={handleDeleteTask} handleEdit={handleEditTask}/> : null }
+      <div className="task-header">
+        <h3 className="task-title">{taskData.name}</h3>
+        <button className="task-menu" onClick={(e) => {e.stopPropagation(); setIsMenuVisible(!isMenuVisible)}}></button>
+      </div>
+      <p className="task-description">{taskData.description}</p>
+      <span className="task-deadline">{taskData.deadline ? getDateString(new Date(taskData.deadline)) : 'No deadline'}</span>
+      <span className="task-priority">{formatEnum(taskData.priority)}</span>
+      <div className="task-dropdown" onClick={(e) => {e.stopPropagation();}}>
+        <button className={ isVisibleDropdown ? "task-dropdown-button task-dropdown-button_active" : "task-dropdown-button"} onClick={ () => {setIsVisibleDropdown(!isVisibleDropdown)} }>Move to:</button>
+        { isVisibleDropdown ? 
+        <div className="task-dropdown-content">
+          {renderListOptions(lists)}
+        </div> : null }
+      </div>
+    </div>
+  );
 }
 
 export default TaskBlock;

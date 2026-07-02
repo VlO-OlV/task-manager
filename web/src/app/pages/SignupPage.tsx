@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import Nav from '../components/Nav';
 import AuthForm from '../components/AuthForm';
-import Toast from '../components/Toast';
 
 function SignupPage () {
 
@@ -13,7 +12,6 @@ function SignupPage () {
       <main>
         <AuthForm isLogin={false}/>
       </main>
-      <Toast />
     </>
   );
 }
